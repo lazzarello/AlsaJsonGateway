@@ -118,6 +118,7 @@ STATIC int requestApi (struct MHD_Connection *connection, AJG_session *session, 
   memset (&request, 0, sizeof (request));
   jsonResponse=NULL;
 
+  // this is so dumb
   // Process POST action. Libmicrohttpd POST handling is everything except simple!!! Not only the logic is less
   // than obvious to understand. But furthermore documentation and samples are almost each of them more impossible
   // that the other. In AJG it's even worse as we use JSON contend type that is not supported by Libmicrohttpd
@@ -308,6 +309,7 @@ STATIC int requestApi (struct MHD_Connection *connection, AJG_session *session, 
 
    serialized = json_object_to_json_string(jsonResponse);
    response = MHD_create_response_from_buffer (strlen (serialized), (void*)serialized, MHD_RESPMEM_MUST_COPY);
+   MHD_add_response_header (response,MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 
    ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
    MHD_destroy_response (response);
@@ -318,6 +320,7 @@ STATIC int requestApi (struct MHD_Connection *connection, AJG_session *session, 
 ExitOnError:
    serialized = json_object_to_json_string(errMessage);
    response = MHD_create_response_from_buffer (strlen (serialized), (void*)serialized, MHD_RESPMEM_MUST_COPY);
+   MHD_add_response_header (response,MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, "*");
    ret = MHD_queue_response (connection, MHD_HTTP_BAD_REQUEST, response);
    MHD_destroy_response (response);
    json_object_put (errMessage); // decrease reference rqtcount to free the json object
@@ -354,6 +357,7 @@ STATIC int requestFile (struct MHD_Connection *connection, AJG_session *session,
           const char *errorstr = "<html><body>Alsa-Json-Gateway Unknown or Not readable file</body></html>";
           response = MHD_create_response_from_buffer (strlen (errorstr),
                          (void *) errorstr,	 MHD_RESPMEM_PERSISTENT);
+          MHD_add_response_header (response,MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, "*");
           ret = MHD_queue_response (connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
           ret= MHD_YES;
 
@@ -370,6 +374,7 @@ STATIC int requestFile (struct MHD_Connection *connection, AJG_session *session,
             strncat (filepath, "index.html", sizeof (filepath) - 1);
             close (fd);
             response = MHD_create_response_from_buffer (0,"", MHD_RESPMEM_PERSISTENT);
+            MHD_add_response_header (response,MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, "*");
             MHD_add_response_header (response,MHD_HTTP_HEADER_LOCATION, filepath);
             ret = MHD_queue_response (connection, MHD_HTTP_MOVED_PERMANENTLY, response);
 
@@ -377,6 +382,7 @@ STATIC int requestFile (struct MHD_Connection *connection, AJG_session *session,
 
             fprintf (stderr, "Fail file: [%s] is not a regular file\n", filepath);
             const char *errorstr = "<html><body>Alsa-Json-Gateway Invalid file type</body></html>";
+            MHD_add_response_header (response,MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, "*");
             response = MHD_create_response_from_buffer (strlen (errorstr),
                          (void *) errorstr,	 MHD_RESPMEM_PERSISTENT);
             ret = MHD_queue_response (connection, MHD_HTTP_INTERNAL_SERVER_ERROR, response);
@@ -399,6 +405,7 @@ STATIC int requestFile (struct MHD_Connection *connection, AJG_session *session,
                 response = MHD_create_response_from_buffer (0,"", MHD_RESPMEM_PERSISTENT);
                 MHD_add_response_header (response,MHD_HTTP_HEADER_CACHE_CONTROL, session->cacheTimeout); // default one hour cache
                 MHD_add_response_header (response,MHD_HTTP_HEADER_ETAG, etagValue);
+                MHD_add_response_header (response,MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, "*");
                 ret = MHD_queue_response (connection, MHD_HTTP_NOT_MODIFIED, response);
 
             } else {  // it's a new file, we need to upload it to client
@@ -406,6 +413,7 @@ STATIC int requestFile (struct MHD_Connection *connection, AJG_session *session,
                 response =  MHD_create_response_from_fd (sbuf.st_size, fd);
                 MHD_add_response_header (response,MHD_HTTP_HEADER_CACHE_CONTROL,session->cacheTimeout); // default one hour cache
                 MHD_add_response_header (response,MHD_HTTP_HEADER_ETAG, etagValue);
+                MHD_add_response_header (response,MHD_HTTP_HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, "*");
                 ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
             }
         }
